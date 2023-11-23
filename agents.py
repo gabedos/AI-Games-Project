@@ -47,16 +47,22 @@ class QLearnAgent(Agent):
 
 
 class MonteCarloAgent(Agent):
+    """
+    MonteCarloAgent utilizes MonteCarlo methods to determine whether to hit or not.
+    """
 
-    Explore_time = 1000
+    # NOTE: 0.25 seconds may yield approximately 300 simulations depending on device
+    Explore_time = 0.25
 
     def policy(self, opponent_hand: Hand):
         """
         Utilizes MonteCarlo methods to determine whether to hit or not.
         """
 
+        # print("\nMonteCarlo with", self.deck, "and", self.hand, "against", opponent_hand, "\n")
+
         start_time = time.time()
-        start_state = BlackJackState(self.hand, opponent_hand, self.deck)
+        start_state = BlackjackStateMCTS(self.hand, opponent_hand, self.deck)
 
         root = MonteCarloNode(start_state, None)
 
@@ -71,13 +77,19 @@ class MonteCarloAgent(Agent):
             # Updates the rewards of the parents
             node.update_rewards(reward)
 
+        # Print basic information
+        # print(root)
+        # for child in root.children:
+        #     print(child)
+
         node = root.get_best_average_child()
 
-        return node.parent_action
+        return True if node.parent_action == "hit" else False
 
-class BlackJackState:
 
-    def __init__(self, my_hand: Hand, dealer_hand: Hand, deck: Deck, last_hit: bool) -> None:
+class BlackjackStateMCTS:
+
+    def __init__(self, my_hand: Hand, dealer_hand: Hand, deck: Deck) -> None:
         self.my_hand = deepcopy(my_hand)
         self.dealer_hand = deepcopy(dealer_hand)
         self.deck = deepcopy(deck)
@@ -85,10 +97,8 @@ class BlackJackState:
         # True if player stands
         self.stand = False
 
-        # True if player previously hit
-        self.last_move_hit = last_hit
-
     def _simulate_dealer(self):
+
         agent = DealerAgent(self.deck)
         while agent.policy(self.my_hand):
             agent.hit()
@@ -97,10 +107,7 @@ class BlackJackState:
         return self.my_hand.value > 21 or self.stand
     
     def get_actions(self):
-        if self.last_move_hit:
-            return self.deck.get_unique_cards()
-        else:
-            return ["hit", "stand"]
+        return ["hit", "stand"]
 
     def find_terminal_value(self):
         self._simulate_dealer()
@@ -113,20 +120,24 @@ class BlackJackState:
         next_state = deepcopy(self)
 
         if action == "hit":
-            assert self.last_move_hit == False, "Cannot hit again without drawing cards"
-
             next_state.my_hand.add_card(next_state.deck.deal_card())
-
-        elif action == "stand":
-            next_state.stand = True
         else:
+            next_state.stand = True
 
         return next_state
+    
+    def refresh_hand(self, parent_deck: Deck, parent_hand: Hand):
+        """
+        Refreshes the hand by dealing a new card from the parent's deck.
+        """
+        self.deck = parent_deck
+        self.my_hand = parent_hand
+        self.my_hand.add_card(self.deck.deal_card())
 
 
 class MonteCarloNode:
 
-    def __init__(self, state:BlackJackState, parent=None, parent_action=None):
+    def __init__(self, state:BlackjackStateMCTS, parent=None, parent_action=None):
 
         self.state = state
         self.parent = parent
@@ -200,7 +211,14 @@ class MonteCarloNode:
             if not current_node.is_fully_expanded():
                 return current_node.expand()
             else:
+
                 current_node = current_node.get_best_ucb_child()
+                
+                # Refresh node by dealing a new card from parent's deck
+                parent_deck = deepcopy(current_node.parent.state.deck)
+                parent_hand = deepcopy(current_node.parent.state.my_hand)
+                current_node.state.refresh_hand(parent_deck, parent_hand)
+
         return current_node
     
     def simulate(self):
@@ -208,7 +226,11 @@ class MonteCarloNode:
         Returns the terminal value of the node by randomly simulating game.
         """
 
-        payoff = self.state.find_terminal_value()
+        state = self.state
+        while not state.is_terminal():
+            state = state.successor(random.choice(state.get_actions()))
+
+        payoff = state.find_terminal_value()
         return payoff
 
     
@@ -230,15 +252,11 @@ class MonteCarloNode:
             ucb_value = self.get_ucb_value(self.parent.total_visits)
 
         string_form = f"""
-        Node: {self.state}
         Total Visits: {self.total_visits}
         Total Rewards: {self.total_rewards}
         Average Reward: {self.get_average_reward()}
         UCB Value: {ucb_value}
         Parent Action: {self.parent_action}
-        Actor: {self.state.actor()}
-        Missing Child Actions: {self.missing_child_actions}
-        Children: {len(self.children)}
         """
 
         return string_form
