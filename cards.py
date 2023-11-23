@@ -1,3 +1,4 @@
+from collections import defaultdict
 import random
 
 class Card:
@@ -40,12 +41,34 @@ class Deck:
         elif removed_card.value in Deck.High_cards:
             self._heat += 1
 
+        # Convert face cards to 10
+        card_value = "10" if removed_card.value in ['J', 'Q', 'K'] else removed_card.value
+        self.card_counts[card_value] -= 1
+
         return removed_card
 
     def deal_deck(self):
+
         self.cards = [Card(suit, value) for suit in Deck.Suits for value in Deck.Values] * Deck.Deck_num
         random.shuffle(self.cards)
+
+        self.card_counts = defaultdict(int)
+        for value in Deck.Values:
+            if value.isnumeric():
+                self.card_counts[value] += Deck.Deck_num * len(Deck.Suits)
+            elif value != 'A':
+                self.card_counts["10"] += Deck.Deck_num * len(Deck.Suits)
+            else:
+                self.card_counts["A"] += Deck.Deck_num * len(Deck.Suits)
+
         self._heat = 0
+
+    def get_probability(self, card_value: str) -> float:
+        """
+        Returns the probability of drawing a card with the given value.
+        """
+        card_value = "10" if card_value in ['J', 'Q', 'K'] else card_value
+        return self.card_counts[card_value] / len(self.cards)
 
     @property
     def heat(self):
@@ -55,6 +78,12 @@ class Deck:
         number_of_decks = len(self.cards) / (len(Deck.Suits) * len(Deck.Values))
         average_heat = self._heat / number_of_decks
         return average_heat
+
+    def get_unique_cards(self):
+        """
+        Returns the unique cards in the deck.
+        """
+        return [k for k, v in self.card_counts.items() if v > 0]
 
     def __repr__(self):
         return f"Deck of {len(self.cards)} cards"
