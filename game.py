@@ -57,6 +57,6 @@ class Game:
         return player_wins/self.rounds, dealer_wins/self.rounds
 
 if __name__ == "__main__":
-    game = Game(Player_agent=DealerAgent, Dealer_agent=DealerAgent, rounds=10000)
+    game = Game(Player_agent=MonteCarloAgent, Dealer_agent=DealerAgent, rounds=100)
     outcomes = game.start()
     print(f"Player wins: {outcomes[0]*100}%")
