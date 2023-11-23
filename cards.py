@@ -27,7 +27,7 @@ class Deck:
         Checks if the deck needs to be reshuffled and reshuffles if necessary.
             Note: should only execute at the start of each game's round
         """
-        if len(self.cards) > len(Deck.Suits) * len(Deck.Values) * Deck.Deck_num * Deck.Redeal_percentage:
+        if len(self.cards) < len(Deck.Suits) * len(Deck.Values) * Deck.Deck_num * Deck.Redeal_percentage:
             self.deal_deck()
 
     def deal_card(self) -> Card :
