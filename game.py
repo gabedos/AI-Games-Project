@@ -33,6 +33,10 @@ class Game:
         while player.policy(dealer.hand):
             player.hit()
 
+        # Player busted!
+        if player.hand.value > 21:
+            return 0
+
         c4 = self.deck.deal_card()
         dealer.hand.add_card(c4)
 
@@ -47,16 +51,22 @@ class Game:
 
         player_wins = 0
         dealer_wins = 0
+        ties = 0
 
         for _ in range(self.rounds):
-            player_win = self.play_round()
-            if player_win:
+            result = self.play_round()
+            if result == 1:
                 player_wins += 1
-            else:
+            elif result == 0:
                 dealer_wins += 1
-        return player_wins/self.rounds, dealer_wins/self.rounds
+            else:
+                ties += 1
+        return player_wins/self.rounds, dealer_wins/self.rounds, ties/self.rounds
 
 if __name__ == "__main__":
+
     game = Game(Player_agent=MonteCarloAgent, Dealer_agent=DealerAgent, rounds=100)
+
     outcomes = game.start()
     print(f"Player wins: {outcomes[0]*100}%")
+    print(outcomes)

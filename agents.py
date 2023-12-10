@@ -42,8 +42,11 @@ class QLearnAgent(Agent):
         """
 
         # TODO: implement
-
-        pass
+        number = random.random()
+        if number > 0.5:
+            return True
+        else:
+            return False
 
 
 class MonteCarloAgent(Agent):
@@ -52,14 +55,12 @@ class MonteCarloAgent(Agent):
     """
 
     # NOTE: 0.25 seconds may yield approximately 300 simulations depending on device
-    Explore_time = 0.25
+    Explore_time = 1
 
     def policy(self, opponent_hand: Hand):
         """
         Utilizes MonteCarlo methods to determine whether to hit or not.
         """
-
-        # print("\nMonteCarlo with", self.deck, "and", self.hand, "against", opponent_hand, "\n")
 
         start_time = time.time()
         start_state = BlackjackStateMCTS(self.hand, opponent_hand, self.deck)
@@ -76,11 +77,6 @@ class MonteCarloAgent(Agent):
 
             # Updates the rewards of the parents
             node.update_rewards(reward)
-
-        # Print basic information
-        # print(root)
-        # for child in root.children:
-        #     print(child)
 
         node = root.get_best_average_child()
 
@@ -168,7 +164,6 @@ class MonteCarloNode:
         """
         Returns the child node with the best average reward.
         """
-
         node = max(self.children, key = lambda x: x.get_average_reward())
         return node
 
@@ -176,7 +171,6 @@ class MonteCarloNode:
         """
         Returns the UCB value of the node using parents visits and actor
         """
-
         value = self.get_average_reward() + math.sqrt(2 * math.log(parent_total_visits) / self.total_visits)
         return value
 
@@ -184,7 +178,6 @@ class MonteCarloNode:
         """
         Returns the child node with the best UCB value.
         """
-
         node = max(self.children, key = lambda x: x.get_ucb_value(self.total_visits))
         return node
     
@@ -192,8 +185,6 @@ class MonteCarloNode:
         """
         Expands the node by adding a new child node from an unexplored action.
         """
-	
-        # assert len(self.missing_child_actions) > 0, "No more actions to expand"
         action = self.missing_child_actions.pop()
         next_state = self.state.successor(action)
         child_node = MonteCarloNode(next_state, parent=self, parent_action=action)
@@ -204,7 +195,6 @@ class MonteCarloNode:
         """
         Returns the leaf node of the tree using UCB values.
         """
-
         current_node = self
         while not current_node.state.is_terminal():
             
@@ -225,20 +215,17 @@ class MonteCarloNode:
         """
         Returns the terminal value of the node by randomly simulating game.
         """
-
         state = self.state
         while not state.is_terminal():
             state = state.successor(random.choice(state.get_actions()))
 
         payoff = state.find_terminal_value()
         return payoff
-
     
     def update_rewards(self, reward):
         """
         Updates the total reward and total visits of the node and all its parents.
         """
-
         parent_node = self
         while parent_node is not None:
             parent_node.total_rewards += reward

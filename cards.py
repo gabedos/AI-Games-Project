@@ -126,18 +126,30 @@ class Hand:
     def compute_winner(self, dealer_hand):
         """
         Computes the winner of the game.
+            0 = dealer wins, 1 = player wins, 0.5 = tie
         """
         player_bust = self.value > 21
+
         dealer_bust = dealer_hand.value > 21
+
         player_win = self.value > dealer_hand.value
+    
+        tie = self.value == dealer_hand.value
 
         if player_bust:
             return 0
-        elif dealer_bust or player_win:
+        
+        if dealer_bust:
             return 1
-        else:
-            # Ties are losses for the player
-            return 0
+        
+        if tie:
+            return 0.5
+        
+        if player_win:
+            return 1
+        
+        return 0
+
 
     def __repr__(self):
         return f"Hand: {' '.join(map(str, self.cards))} (Value: {self.value})"
