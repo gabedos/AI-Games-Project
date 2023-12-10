@@ -34,19 +34,86 @@ class DealerAgent(Agent):
         return self.hand.value < 17
 
 
+import random
+from collections import defaultdict
+import numpy as np
+
 class QLearnAgent(Agent):
+    def __init__(self, deck: Deck):
+        super().__init__(deck)
+        self.q_table = {}
+        self.learning_rate = 0.1
+        self.discount_factor = 0.9
+        self.exploration_rate = 1.0
+        self.min_exploration_rate = 0.01
+        self.exploration_decay_rate = 0.001
+        self.opponent_hand = None  # To store the opponent's hand
+
+    def train(self, training_duration=10):
+        start_time = time.time()
+        while time.time() - start_time < training_duration:
+            self.deck.deal_deck()
+            self.hand = Hand()
+            self.opponent_hand = Hand()  # Reset opponent hand for training
+            self.hit()
+            self.hit()  # Start with two cards
+
+            while not self.hand.value > 21:
+                state = self.get_state()
+                if state not in self.q_table:
+                    self.q_table[state] = {'hit': 0, 'stand': 0}
+
+                action = self.choose_action(state)
+                self.perform_action(action)
+
+                new_state = self.get_state()
+                reward = self.get_reward(new_state)
+                self.update_q_table(state, action, reward, new_state)
+
+                if action == 'stand' or self.hand.value > 21:
+                    break
+
+    def choose_action(self, state):
+        if np.random.rand() < self.exploration_rate:
+            return np.random.choice(['hit', 'stand'])
+        return max(self.q_table[state], key=self.q_table[state].get)
+
+    def perform_action(self, action):
+        if action == 'hit':
+            self.hit()
+
+    def get_reward(self, new_state):
+        if new_state[0] > 21:  # Bust
+            return -1
+        return 0
+
+    def update_q_table(self, state, action, reward, new_state):
+        if new_state not in self.q_table:
+            self.q_table[new_state] = {'hit': 0, 'stand': 0}
+
+        old_value = self.q_table[state][action]
+        next_max = max(self.q_table[new_state].values())
+        new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (reward + self.discount_factor * next_max)
+        self.q_table[state][action] = new_value
+
+        if self.exploration_rate > self.min_exploration_rate:
+            self.exploration_rate -= self.exploration_decay_rate
 
     def policy(self, opponent_hand: Hand):
-        """
-        Utilizes Q-Learning to determine whether to hit or not.
-        """
+        self.opponent_hand = opponent_hand  # Store the opponent's hand for use in get_state
+        self.train(training_duration=1)  # Train for 10 seconds
+        state = self.get_state()
+        if state not in self.q_table:
+            self.q_table[state] = {'hit': 0, 'stand': 0}
+        return self.choose_action(state) == 'hit'
 
-        # TODO: implement
-        number = random.random()
-        if number > 0.5:
-            return True
-        else:
-            return False
+    def get_state(self):
+        hand_value = self.hand.value
+        has_ace = any(card.value == 'A' for card in self.hand.cards)
+        is_hot = self.deck.heat > 0
+        dealer_value = self.opponent_hand.value if self.opponent_hand.cards else 0
+        return (hand_value, has_ace, is_hot, dealer_value)
+
 
 
 class MonteCarloAgent(Agent):
