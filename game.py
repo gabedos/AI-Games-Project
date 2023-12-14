@@ -69,6 +69,8 @@ class Game:
 
 if __name__ == "__main__":
 
+    print("Welcome to Blackjack! executing simulations in game.py\n")
+
     ## Blackjack Background ##
 
     # The game being played is a simplified version of blackjack where the player and dealer are dealt 2 cards each initially.
@@ -78,32 +80,46 @@ if __name__ == "__main__":
     # If the player stands, then their turn is over
     # The dealer then hits cards according to their pre-defined strategy
 
-    ## MCTS Agent ##
+    ## MCTS Agent ## By Gabriel Dos Santos
 
     # First we will test the Monte Carlo agent against the dealer! One unique challenge was dealing with the fact that
-    # the game of blackjack is stochastic. Originally, I tried using Chance Nodes but ran into many difficulties. Then,
-    # I realized I could squash all the 13 different outcomes from hitting into one node and update the deck as we traverse
-    # down the tree. This does has some additional overhead as a result of making deep copies of the deck at each node, but
-    # that is what made the algorithm work throughout my various attempts.
+    # the game of blackjack is stochastic. Originally, I tried using Chance Nodes to represent "hit" states in which a 
+    # card would be drawn. Then, the Chance Node would randomly sample a node based on its probability distribution. However,
+    # I ran into difficulties trying to get the tree to work with 2 different types of nodes within it.
+
+    # Then, I realized I could replace the Chance Node & its children by squashing all 13 different outcomes from hitting into one node.
+    # That is, instead of picking a node based on the probability distribution, I could just draw a card from the deck
+    # (which inherently models the probabilty distribution) and update the live deck as we traverse down the tree.
+    # This results in each mcts tree node's game state slightly changing as we traverse as a result of different cards being randomly drawn,
+    # but they still consistently represent hit or stand nodes as originally created. One drawback of this implementation is that we need 
+    # to create deepcopies of the deck each iteration so that we have the same starting deck each time!
 
     ## MCTS Agent Results ##
 
+    print("MCTS Agent vs Dealer\n", "-"*20)
+    ROUNDS = 1000
+
     # Under t = 0.005 second per move (averaging 5-10 simulations), the win rate was 39.51% when having 25,000 simulations!
-    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.005}, dealer_agent=DealerAgent, rounds=1000)
+    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.005}, dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
-    print(f"(M1: t=0.005) Player wins: {outcomes[0]*100}%", f"Dealer wins: {outcomes[1]*100}%", f"Ties: {outcomes[2]*100}%")
+    print("(M1: t=0.005)",
+          f"Player wins: {round(outcomes[0]*100, 3)}%",
+          f"Dealer wins: {round(outcomes[1]*100, 3)}%",
+          f"Ties: {round(outcomes[2]*100, 3)}%")
 
     # Under t = 0.1 second per move (20x more time), the win rate rose to 42.6% when having 10,000 simulations!
-    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.1},dealer_agent=DealerAgent, rounds=1000)
+    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.1},dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
-    print(f"(M2: t=0.1) Player wins: {outcomes[0]*100}%", f"Dealer wins: {outcomes[1]*100}%", f"Ties: {outcomes[2]*100}%")
+    print("(M1: t=0.1)",
+          f"Player wins: {round(outcomes[0]*100, 3)}%",
+          f"Dealer wins: {round(outcomes[1]*100, 3)}%",
+          f"Ties: {round(outcomes[2]*100, 3)}%")
 
     # We notice that as we increase the time and number of simulations, the MCTS agent approaches the optimal strategy
-    # With the maximum theoretical win rate of approximately 42.5%.
+    # with the maximum theoretical win rate of approximately 42.5%.
 
     # One interesting thing to note is that increasing the amount of time makes minimal improvements to the results.
     # That is, the agent given barely any time to think performs a few percentage points away from optimal game play!
 
-    # NOTE: The agent given extra time may underperform the agent given less time due to the fact that less iterations
-    # have been run so there is much higher variance which is especially influential when the different is only about 2%.
-    # If you have extra time, try running the mcts agents for more rounds and see if the win rate converges towards 39.5% and 42.5%!
+    # NOTE: The test script only runs 1000 iterations so there is a much higher variance. Since the difference in win rate is only about 3%,
+    # there is a chance that the extra time doesn't make a difference in the test script. If you have time, try increasing the number of rounds!
