@@ -83,6 +83,10 @@ class MonteCarloAgent(Agent):
             # Updates the rewards of the parents
             node.update_rewards(reward)
 
+        # If given no time to explore, defaults to False (stand)
+        if root.total_visits == 0:
+            return False
+
         node = root.get_best_average_child()
 
         return True if node.parent_action == "hit" else False
