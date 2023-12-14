@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # Under t = 0.005 second per move (averaging 5-10 simulations), the win rate was 39.51% when having 25,000 simulations!
     game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.005}, dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
-    print("(M1: t=0.005)",
+    print("(M1: t=0.005)\t",
           f"Player wins: {round(outcomes[0]*100, 3)}%",
           f"Dealer wins: {round(outcomes[1]*100, 3)}%",
           f"Ties: {round(outcomes[2]*100, 3)}%")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # Under t = 0.1 second per move (20x more time), the win rate rose to 42.6% when having 10,000 simulations!
     game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.1},dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
-    print("(M1: t=0.1)",
+    print("(M1: t=0.1)\t",
           f"Player wins: {round(outcomes[0]*100, 3)}%",
           f"Dealer wins: {round(outcomes[1]*100, 3)}%",
           f"Ties: {round(outcomes[2]*100, 3)}%")
@@ -123,3 +123,7 @@ if __name__ == "__main__":
 
     # NOTE: The test script only runs 1000 iterations so there is a much higher variance. Since the difference in win rate is only about 3%,
     # there is a chance that the extra time doesn't make a difference in the test script. If you have time, try increasing the number of rounds!
+
+    ## Q-Learning Agent ## By EJ Wilford
+
+    print("\nQ-Learning Agent vs Dealer\n", "-"*20)
