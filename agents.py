@@ -48,8 +48,11 @@ class QLearnAgent(Agent):
         self.min_exploration_rate = 0.01
         self.exploration_decay_rate = 0.001
         self.opponent_hand = None  # To store the opponent's hand
+        # train in the init
+        self.train(training_duration=10)
 
     def train(self, training_duration=10):
+        print("Training...")
         start_time = time.time()
         while time.time() - start_time < training_duration:
             self.deck.deal_deck()
@@ -101,7 +104,7 @@ class QLearnAgent(Agent):
 
     def policy(self, opponent_hand: Hand):
         self.opponent_hand = opponent_hand  # Store the opponent's hand for use in get_state
-        self.train(training_duration=1)  # Train for 10 seconds
+        # self.train(training_duration=5)  # Train for 10 seconds
         state = self.get_state()
         if state not in self.q_table:
             self.q_table[state] = {'hit': 0, 'stand': 0}
@@ -112,7 +115,7 @@ class QLearnAgent(Agent):
         has_ace = any(card.value == 'A' for card in self.hand.cards)
         is_hot = self.deck.heat > 0
         dealer_value = self.opponent_hand.value if self.opponent_hand.cards else 0
-        return (hand_value, has_ace, is_hot, dealer_value)
+        return (hand_value, has_ace, self.deck.heat, dealer_value)
 
 
 

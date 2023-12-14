@@ -65,8 +65,9 @@ class Game:
 
 if __name__ == "__main__":
 
-    game = Game(Player_agent=QLearnAgent, Dealer_agent=DealerAgent, rounds=500)
+    game = Game(Player_agent=QLearnAgent, Dealer_agent=DealerAgent, rounds=100)
 
     outcomes = game.start()
     print(f"Player wins: {outcomes[0]*100}%")
     print(outcomes)
+
