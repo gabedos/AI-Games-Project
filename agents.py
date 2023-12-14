@@ -62,12 +62,21 @@ class MonteCarloAgent(Agent):
         Utilizes MonteCarlo methods to determine whether to hit or not.
         """
 
-        start_time = time.time()
         start_state = BlackjackStateMCTS(self.hand, opponent_hand, self.deck)
+
+        # Edge case: if player has >= 21 then game over
+        if start_state.is_terminal():
+            return False
 
         root = MonteCarloNode(start_state, None)
 
-        while time.time() - start_time < MonteCarloAgent.Explore_time:
+        iterations = 5000
+        for _ in range(iterations):
+
+        # NOTE: You can change between time and iterations
+
+        # start_time = time.time()
+        # while time.time() - start_time < MonteCarloAgent.Explore_time:
 
             # Gets the leaf node in the UCB tree
             node = root.find_leaf_node()
@@ -93,21 +102,25 @@ class BlackjackStateMCTS:
         # True if player stands
         self.stand = False
 
-    def _simulate_dealer(self):
-
-        agent = DealerAgent(self.deck)
-        while agent.policy(self.my_hand):
-            agent.hit()
-
     def is_terminal(self):
-        return self.my_hand.value > 21 or self.stand
-    
+        return self.my_hand.value >= 21 or self.stand
+
     def get_actions(self):
         return ["hit", "stand"]
 
     def find_terminal_value(self):
-        self._simulate_dealer()
-        return self.my_hand.compute_winner(self.dealer_hand)
+
+        # Create dealer agent with same hand!
+        dealer = DealerAgent(deepcopy(self.deck))
+        dealer.hand = deepcopy(self.dealer_hand)
+
+        # Simulate dealer's turn
+        while dealer.policy(self.my_hand):
+            dealer.hit()
+
+        # Determine winner
+        winner = self.my_hand.compute_winner(dealer.hand)
+        return winner
     
     def successor(self, action):
         """
@@ -122,13 +135,21 @@ class BlackjackStateMCTS:
 
         return next_state
     
-    def refresh_hand(self, parent_deck: Deck, parent_hand: Hand):
+    def refresh_cards(self, parent_deck: Deck, parent_hand: Hand, parent_action: str):
         """
-        Refreshes the hand by dealing a new card from the parent's deck.
+        Refreshes the cards in the game state.
         """
         self.deck = parent_deck
         self.my_hand = parent_hand
-        self.my_hand.add_card(self.deck.deal_card())
+        if parent_action == "hit":
+            self.my_hand.add_card(self.deck.deal_card())
+
+    def __str__(self) -> str:
+        string_form = f""" ---
+        Hand: {self.my_hand}
+        Stand: {self.stand}
+        """
+        return string_form
 
 
 class MonteCarloNode:
@@ -143,11 +164,7 @@ class MonteCarloNode:
         self.total_rewards = 0
 
         self.children = []
-
-        if self.state.is_terminal():
-            self.missing_child_actions = []
-        else:
-            self.missing_child_actions = self.state.get_actions()
+        self.missing_child_actions = self.state.get_actions()
 
     def is_fully_expanded(self):
         """
@@ -202,12 +219,13 @@ class MonteCarloNode:
                 return current_node.expand()
             else:
 
+                # Refresh node by building a fresh hand from parent node
                 current_node = current_node.get_best_ucb_child()
-                
-                # Refresh node by dealing a new card from parent's deck
-                parent_deck = deepcopy(current_node.parent.state.deck)
-                parent_hand = deepcopy(current_node.parent.state.my_hand)
-                current_node.state.refresh_hand(parent_deck, parent_hand)
+
+                current_node.state.refresh_cards(
+                    deepcopy(current_node.parent.state.deck),
+                    deepcopy(current_node.parent.state.my_hand), 
+                    current_node.parent_action)
 
         return current_node
     
@@ -244,6 +262,9 @@ class MonteCarloNode:
         Average Reward: {self.get_average_reward()}
         UCB Value: {ucb_value}
         Parent Action: {self.parent_action}
+        State: {self.state}
+        Children: {self.children}
+        IsFullyExpanded: {self.is_fully_expanded()}
         """
 
         return string_form
