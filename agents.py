@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class Agent(ABC):
 
-    def __init__(self, deck: Deck):
+    def __init__(self, deck: Deck = None):
         self.deck = deck
         self.hand = Hand()
 
@@ -54,8 +54,9 @@ class MonteCarloAgent(Agent):
     MonteCarloAgent utilizes MonteCarlo methods to determine whether to hit or not.
     """
 
-    # NOTE: 0.25 seconds may yield approximately 300 simulations depending on device
-    Explore_time = 1
+    def __init__(self, deck: Deck = None, **kwargs):
+        super().__init__(deck)
+        self.explore_time = kwargs.get("explore_time", 0.005)
 
     def policy(self, opponent_hand: Hand):
         """
@@ -70,13 +71,8 @@ class MonteCarloAgent(Agent):
 
         root = MonteCarloNode(start_state, None)
 
-        iterations = 5000
-        for _ in range(iterations):
-
-        # NOTE: You can change between time and iterations
-
-        # start_time = time.time()
-        # while time.time() - start_time < MonteCarloAgent.Explore_time:
+        start_time = time.time()
+        while time.time() - start_time < self.explore_time:
 
             # Gets the leaf node in the UCB tree
             node = root.find_leaf_node()
