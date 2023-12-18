@@ -2,44 +2,47 @@ from cards import Deck
 from agents import Agent, DealerAgent, QLearnAgent, MonteCarloAgent
 
 class Game:
-    def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, rounds=1):
+def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, rounds=1, q_table=None):
         self.deck = Deck()
         self.player_agent = player_agent
         self.player_args = player_args
         self.dealer_agent = dealer_agent
         self.rounds = rounds
+        self.q_table = q_table
 
     def play_round(self):
 
         self.deck.start_round()
-
         # Update players decks
         self.player_agent.deck = self.deck
         self.dealer_agent.deck = self.deck
-
-        player = self.player_agent(self.deck, **self.player_args)
+        if self.Player_agent == QLearnAgent:
+            player = self.Player_agent(self.deck, self.q_table)
+        else:
+          player = self.player_agent(self.deck, **self.player_args)
         dealer = self.dealer_agent(self.deck)
+
+        # if the player already has cards, reset them
+        player.hand.reset()
+        dealer.hand.reset()
 
         # Deal 3 cards
         # Note: not giving dealer 2 cards now because
         # it will provide extra information of unrevealed card
-
         c1 = self.deck.deal_card()
         c2 = self.deck.deal_card()
         c3 = self.deck.deal_card()
 
         player.hand.add_card(c1)
         player.hand.add_card(c2)
-
         dealer.hand.add_card(c3)
 
         # Player's turn
         while player.policy(dealer.hand):
             player.hit()
-
-        # Player busted!
-        if player.hand.value > 21:
-            return 0
+            #Player busted!
+            if player.hand.value > 21:
+                return 0
 
         c4 = self.deck.deal_card()
         dealer.hand.add_card(c4)
@@ -57,7 +60,17 @@ class Game:
         dealer_wins = 0
         ties = 0
 
-        for _ in range(self.rounds):
+        # if it is a QLearnAgent, train it first
+        if self.Player_agent == QLearnAgent:
+            # make a deck to use for training
+            training_deck = Deck()
+            training_player = self.Player_agent(training_deck)
+            q_table = training_player.train(1000000) # train for 1 million rounds
+            # training_player.print_q_table() # print the q_table
+            self.q_table = q_table # set the q_table to the trained q_table
+
+
+        for i in range(self.rounds):
             result = self.play_round()
             if result == 1:
                 player_wins += 1
@@ -68,7 +81,6 @@ class Game:
         return player_wins/self.rounds, dealer_wins/self.rounds, ties/self.rounds
 
 if __name__ == "__main__":
-
     print("Welcome to Blackjack! executing simulations in game.py\n")
 
     ## Blackjack Background ##
@@ -110,6 +122,7 @@ if __name__ == "__main__":
     # Under t = 0.1 second per move (20x more time), the win rate rose to 42.6% when having 10,000 simulations!
     game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.1},dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
+    
     print("(M1: t=0.1)\t",
           f"Player wins: {round(outcomes[0]*100, 3)}%",
           f"Dealer wins: {round(outcomes[1]*100, 3)}%",

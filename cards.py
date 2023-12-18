@@ -98,6 +98,14 @@ class Hand:
         self.value = 0
         self.aces = 0
 
+    def reset(self):
+        """
+        Resets the hand.
+        """
+        self.cards = []
+        self.value = 0
+        self.aces = 0
+
     def add_card(self, card: Card):
         """
         Adds a card to the hand and updates the value of the hand.
