@@ -1,27 +1,6 @@
 # AI-Games-Project
 Implementation of Blackjack with various intelligent algorithms for determining optimal play.
 
-
-## Q-Learning Agent
-
-#### Approach
-- Utilizes an epsilon-greedy policy for exploration and learning.
-- State space includes player’s hand value, dealer’s hand value, presence of a usable ace, and deck heat for pseudo-card counting.
-- Q-table initialized with zeros and updated via formula with class.
-
-#### Results
-- **Performance with Limited Training (1000 rounds):**
-  - The agent achieved a win rate of 37.5%.
-- **Performance with Extensive Training (100,000 rounds):**
-  - The win rate improved to 40.7%, a modest increase despite a significant increase in training rounds.
-- **Insights:**
-  - Shows better performance with more training rounds due to increased experience and learning.
-  - Hyperparameter tuning might help in reaching closer to the optimal win rate (~43%).
-
-#### Considerations
-- Similar to the MCTS agent, high variance in results due to limited test iterations.
-- Suggestion: Experiment with the number of rounds for a more comprehensive performance comparison between the two agents.
-
 ## Monte Carlo Agent
 
 ### Results
@@ -47,3 +26,25 @@ Under t = 0.1 second per move (20x more time), the win rate rose to xx.x% under 
 #### Considerations
 - Variance in results due to limited iterations (1000 rounds).
 - Recommendation: Increase the number of rounds to validate the impact of additional time on performance.
+
+## Q-Learning Agent
+
+#### Approach
+- Utilizes an epsilon-greedy policy for exploration and learning.
+- State space includes player’s hand value, dealer’s hand value, presence of a usable ace, and deck heat for pseudo-card counting.
+- Q-table initialized with zeros and updated via formula with class.
+
+#### Results
+- **Performance with Limited Training (1000 rounds):**
+  - The agent achieved a win rate of 37.5%.
+- **Performance with Extensive Training (100,000 rounds):**
+  - The win rate improved to 40.7%, a modest increase despite a significant increase in training rounds.
+- **Insights:**
+  - Shows better performance with more training rounds due to increased experience and learning.
+  - Hyperparameter tuning might help in reaching closer to the optimal win rate (~43%).
+
+#### Considerations
+- Similar to the MCTS agent, high variance in results due to limited test iterations.
+- Suggestion: Experiment with the number of rounds for a more comprehensive performance comparison between the two agents.
+
+
