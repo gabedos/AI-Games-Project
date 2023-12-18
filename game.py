@@ -137,8 +137,12 @@ if __name__ == "__main__":
     # NOTE: The test script only runs 1000 iterations so there is a much higher variance. Since the difference in win rate is only about 3%,
     # there is a chance that the extra time doesn't make a difference in the test script. If you have time, try increasing the number of rounds!
 
-    ## Q-Learning Agent ## By EJ Wilford
-    # Now we will test the Q-Learning agent against the dealer. I ran into a few challenges with this agent. First, I had to figure out how to
+    ## Q-Learning Agent ## By EJ Wilford - ejw58
+    # Now we will test the Q-Learning agent against the dealer. The Q-learning agent utilizes an epsilon-greedy policy to explore the state space
+    # and learn the optimal strategy. It tracks the state, action, reward, and next state for each iteration and updates the q-table accordingly.
+    # The q-table is initialized with all zeros and is updated using the following formula: Q(s,a) = Q(s,a) + alpha*(reward + gamma*max(Q(s',a')) - Q(s,a))
+    
+    #I ran into a few challenges with this agent. First, I had to figure out how to
     # represent the state space. I decided to use the player's hand value, the dealer's hand value, and whether or not the player has a usable ace.
     # Then after some thought, I realized it wouldn't be very hard to also include the heat of the deck, this way I could introduce pseudo-card counting
     # into the agent. I feared that this would create too large of a state space, but with relatively few training rounds, the agent was able to learn
