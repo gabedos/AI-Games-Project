@@ -2,7 +2,7 @@ from cards import Deck
 from agents import Agent, DealerAgent, QLearnAgent, MonteCarloAgent
 
 class Game:
-def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, rounds=1, q_table=None):
+    def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, rounds=1, q_table=None):
         self.deck = Deck()
         self.player_agent = player_agent
         self.player_args = player_args
@@ -16,8 +16,8 @@ def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, 
         # Update players decks
         self.player_agent.deck = self.deck
         self.dealer_agent.deck = self.deck
-        if self.Player_agent == QLearnAgent:
-            player = self.Player_agent(self.deck, self.q_table)
+        if self.player_agent == QLearnAgent:
+            player = self.player_agent(self.deck, self.q_table)
         else:
           player = self.player_agent(self.deck, **self.player_args)
         dealer = self.dealer_agent(self.deck)
@@ -61,11 +61,11 @@ def __init__(self, player_agent: Agent, player_args: dict, dealer_agent: Agent, 
         ties = 0
 
         # if it is a QLearnAgent, train it first
-        if self.Player_agent == QLearnAgent:
+        if self.player_agent == QLearnAgent:
             # make a deck to use for training
             training_deck = Deck()
-            training_player = self.Player_agent(training_deck)
-            q_table = training_player.train(1000000) # train for 1 million rounds
+            training_player = self.player_agent(training_deck)
+            q_table = training_player.train(self.player_args['training_rounds']) # train for 1 million rounds
             # training_player.print_q_table() # print the q_table
             self.q_table = q_table # set the q_table to the trained q_table
 
@@ -138,5 +138,38 @@ if __name__ == "__main__":
     # there is a chance that the extra time doesn't make a difference in the test script. If you have time, try increasing the number of rounds!
 
     ## Q-Learning Agent ## By EJ Wilford
+    # Now we will test the Q-Learning agent against the dealer. I ran into a few challenges with this agent. First, I had to figure out how to
+    # represent the state space. I decided to use the player's hand value, the dealer's hand value, and whether or not the player has a usable ace.
+    # Then after some thought, I realized it wouldn't be very hard to also include the heat of the deck, this way I could introduce pseudo-card counting
+    # into the agent. I feared that this would create too large of a state space, but with relatively few training rounds, the agent was able to learn
+    # a boarderline optimal strategy. 
 
+    # As far as it's performance, it was able to beat the dealer about 40% of the time. This is a little worse than the MCTS agent, but I think that
+    # this may have to do with the fact of hyperparameter tuning. I think that with some combination (I haven't been able to find it) that this agent
+    # would reach the absolute optimal (~43%) win rate. I had trouble with the creation of the q-table for situations where in the next state, the player
+    # busted, but I realized that I could just effectively set the q-value to 0 for that state since the immediate reward was -1 anyways and this would
+    # prevent the agent from trying to go to that state again.
+
+    ## Q-Learning Agent Results ##
     print("\nQ-Learning Agent vs Dealer\n", "-"*20)
+    ROUNDS = 1000
+    # With 1000 rounds to train, the agent won 37.5% of the time in my test script
+    game = Game(player_agent=QLearnAgent, player_args={"training_rounds":1000}, dealer_agent=DealerAgent, rounds=ROUNDS)
+    outcomes = game.start()
+    print("(Q1: 1000 rounds)\t",
+          f"Player wins: {round(outcomes[0]*100, 3)}%",
+          f"Dealer wins: {round(outcomes[1]*100, 3)}%",
+          f"Ties: {round(outcomes[2]*100, 3)}%")
+    # With 100,000 rounds to train, the agent won 40.7% of the time in my test script. It's interesting to note that even with a 100x increase in training rounds, 
+    # the agent only improved by about 3%. Although that is to be expected since the agent is already pretty close to the agents local maximum from my testing. (also see note)
+    game = Game(player_agent=QLearnAgent, player_args={"training_rounds":100000}, dealer_agent=DealerAgent, rounds=ROUNDS)
+    outcomes = game.start()
+    print("(Q1: 100,000 rounds)\t",
+          f"Player wins: {round(outcomes[0]*100, 3)}%",
+          f"Dealer wins: {round(outcomes[1]*100, 3)}%",
+          f"Ties: {round(outcomes[2]*100, 3)}%")
+    
+    # As is clear, the Q-Learning agent performs much better with more training rounds. This is because it has more experience to learn from.
+    # NOTE: In the same nature as the MCTS agent note, the test script only runs 1000 iterations so there is a much higher variance than usual. 
+    # I used the same variable for the number of rounds, so if you want, you could increase the number of rounds to see the difference in performance
+    # for both agents at the same time!

@@ -107,7 +107,7 @@ class QLearnAgent(Agent):
             self._play_round()
             self.alpha = self.alpha * self.alpha_decay
 
-        self.print_q_table()
+        # self.print_q_table()
         return self.q_table
 
     def _play_round(self):
