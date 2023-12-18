@@ -1,4 +1,5 @@
 # AI-Games-Project
+#### By Gabriel Dos Santos (gds6) and EJ Wilford (ejw58)
 Implementation of Blackjack with various intelligent algorithms for determining optimal play.
 
 ## Monte Carlo Agent
