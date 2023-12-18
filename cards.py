@@ -11,8 +11,8 @@ class Card:
 
 class Deck:
 
-    Deck_num = 6
-    Redeal_percentage = 0.5
+    Deck_num = 2
+    Redeal_percentage = 0.25
     Suits = ['H', 'D', 'C', 'S']
     Values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -34,6 +34,9 @@ class Deck:
         """
         Returns a card from the deck and removes it from the deck.
         """
+
+        # Always get a random card out of the deck!
+        random.shuffle(self.cards)
 
         removed_card = self.cards.pop()
         if removed_card.value in Deck.Low_cards:
