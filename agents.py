@@ -4,6 +4,9 @@ import random
 from cards import Deck, Hand
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from collections import defaultdict
+import numpy as np
+
 
 class Agent(ABC):
 
@@ -34,88 +37,191 @@ class DealerAgent(Agent):
         return self.hand.value < 17
 
 
-import random
-from collections import defaultdict
-import numpy as np
+
 
 class QLearnAgent(Agent):
-    def __init__(self, deck: Deck):
+    def __init__(self, deck, q_table=None, alpha=0.3, gamma=0.9, epsilon=.2, alpha_decay=0.999):
+        """
+        Initialize the Q-learning agent.
+        """
         super().__init__(deck)
-        self.q_table = {}
-        self.learning_rate = 0.1
-        self.discount_factor = 0.9
-        self.exploration_rate = 1.0
-        self.min_exploration_rate = 0.01
-        self.exploration_decay_rate = 0.001
-        self.opponent_hand = None  # To store the opponent's hand
-        # train in the init
-        self.train(training_duration=10)
+        self.q_table = q_table if q_table is not None else self.create_q_table() # Initialize Q-table
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.alpha_decay = alpha_decay
 
-    def train(self, training_duration=10):
-        print("Training...")
-        start_time = time.time()
-        while time.time() - start_time < training_duration:
-            self.deck.deal_deck()
-            self.hand = Hand()
-            self.opponent_hand = Hand()  # Reset opponent hand for training
-            self.hit()
-            self.hit()  # Start with two cards
+    def create_q_table(self): #DONE
+        """
+        create a Q-table with all possible states and actions
+        """
+        q_table = defaultdict(lambda: defaultdict(float))
+        for dealer_card in range(1, 12):
+            for player_value in range(1, 22):
+                for player_has_ace in [True, False]:
+                    for deck_heat in ['hot', 'nuetral','cold']:
+                        state = (dealer_card, player_value, player_has_ace, deck_heat)
+                        q_table[state]['hit'] = 0
+                        q_table[state]['stay'] = 0
+        return q_table
 
-            while not self.hand.value > 21:
-                state = self.get_state()
-                if state not in self.q_table:
-                    self.q_table[state] = {'hit': 0, 'stand': 0}
+    def print_q_table(self): #DONE
+        """
+        Print the current Q-table
+        """
+        #do the above programatically
+        for player_has_ace in [True, False]:
+            for deck_heat in ['hot', 'nuetral', 'cold']:
+                print("Q-Table for: " + deck_heat + " and " + ("Ace" if player_has_ace else "No Ace"))
+                print("Dealer Card: ", end=' ')
+                print()
+                for i in range(1, 11):
+                    print(i, end=' ')
+                print()
+                for player_value in range(11, 22):
+                    print(player_value, end=' ')
+                    for dealer_card in range(1, 11):
+                        state = (dealer_card, player_value, player_has_ace, deck_heat)
+                        print('H' if self.q_table[state]['hit'] > self.q_table[state]['stay'] else 'S', end=' ')
+                    print()
+                print()
 
-                action = self.choose_action(state)
-                self.perform_action(action)
+    def policy(self, opponent_hand): #DONE
+        """
+        Decide the action (hit or stay) based on the Q-table for the given state
+        """
+        # print the length of the hand
+        # print(len(self.hand.cards))
+        state = self._get_state(opponent_hand)
+        # if the state is new, we randomly choose an action
+        if state not in self.q_table:
+            return random.choice(['hit', 'stay'])
+        return  True if self.q_table[state]['hit'] > self.q_table[state]['stay'] else False
 
-                new_state = self.get_state()
-                reward = self.get_reward(new_state)
-                self.update_q_table(state, action, reward, new_state)
+    def train(self, rounds): #DONE
+        """
+        Train the agent for a given number of rounds
+        """
+        for _ in range(rounds):
+            self.deck.start_round()
+            self._play_round()
+            self.alpha = self.alpha * self.alpha_decay
 
-                if action == 'stand' or self.hand.value > 21:
-                    break
+        self.print_q_table()
+        return self.q_table
 
-    def choose_action(self, state):
-        if np.random.rand() < self.exploration_rate:
-            return np.random.choice(['hit', 'stand'])
-        return max(self.q_table[state], key=self.q_table[state].get)
+    def _play_round(self):
+        """
+        Play a single round for training
+        """
+        # Setting up the hand for the round
+        self.hand = Hand()
+        opponent_hand = Hand()
+        self.hand.add_card(self.deck.deal_card())
+        self.hand.add_card(self.deck.deal_card())
+        opponent_hand.add_card(self.deck.deal_card())
+        
+        # Get the initial state
+        initial_pos = self._get_state(opponent_hand)
+        is_done = False
+        while not is_done: # while we haven't busted or stayed
+            action = self._choose_action(initial_pos) # choose an action
+            new_state, is_done = self._take_action(action, opponent_hand) # take the action
+            reward = 0
+            if is_done: # if we're done, we get the reward from the new state
+                future_reward = self._get_intermediate_reward(initial_pos, action, new_state, opponent_hand) 
+            else: # if we're not done, we get the max reward from the new state
+                future_reward = max(self.q_table[new_state].values())
+            # update the q_table
+            result = self.q_table[initial_pos][action]
+            self.q_table[initial_pos][action] = (1 - self.alpha) * result + self.alpha * (reward + self.gamma * future_reward) # update the q_table using the equation from class
+            initial_pos = new_state # set the new state to the initial state
 
-    def perform_action(self, action):
+
+    def _choose_action(self, state):
+        """
+        Choose action based on the current state using an epsilon-greedy strategy
+        """
+        if random.random() < self.epsilon or state not in self.q_table:  # Epsilon-greedy exploration
+            return random.choice(['hit', 'stay'])
+        else:  # Exploitation
+            return 'hit' if self.q_table[state]['hit'] > self.q_table[state]['stay'] else 'stay'
+
+    def _take_action(self, action, opponent_hand):
+        """
+        Take the chosen action and find out the reward and new state
+        """
         if action == 'hit':
             self.hit()
-
-    def get_reward(self, new_state):
-        if new_state[0] > 21:  # Bust
+        new_state = self._get_state(opponent_hand) # get us the new state from hitting
+        is_done = (self.hand.value > 21) or (action == 'stay') # if we bust or stay, we're done
+        return new_state, is_done
+    
+    def _get_intermediate_reward(self, state, action, new_state, opponent_hand):
+        """
+        Get the intermediate reward for taking the given action and transitioning to the new state
+        """
+        # if we bust, we get a reward of -1
+        if new_state[1] > 21:
             return -1
-        return 0
+        # if we stay, we get a reward of 0
+        elif action == 'stay':
+            # we need to play out the dealer's turn to get the reward
+            while opponent_hand.value < 17:
+                opponent_hand.add_card(self.deck.deal_card())
+            outcome = self._determine_outcome(opponent_hand)
+            reward = self._get_reward(outcome)
+            return reward
+        # if we hit and get 21, we get a reward of 1
+        elif new_state[1] == 21:
+            return 1
+        # if we hit and don't bust or get 21, we get a reward of 0
+        else:
+            return 0
 
-    def update_q_table(self, state, action, reward, new_state):
-        if new_state not in self.q_table:
-            self.q_table[new_state] = {'hit': 0, 'stand': 0}
+    def _get_reward(self, outcome):
+        """
+        calc the reward based on the game outcome- only use in the END of the game
+        """
+        if outcome == 'win':
+            # print("We win")
+            return 1
+        elif outcome == 'lose':
+            # print("Womp womp womp we lost")
+            return -1
+        else:  # tie
+            # print("womp womp we tie")
+            return 0
 
-        old_value = self.q_table[state][action]
-        next_max = max(self.q_table[new_state].values())
-        new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (reward + self.discount_factor * next_max)
-        self.q_table[state][action] = new_value
+    def _determine_outcome(self, opponent_hand):
+        """
+        Determine the outcome of the game based on the final hand values of the player and opponent. could merge with get_reward/replace with compute_winner
+        """
+        if self.hand.value > 21: # if we bust, we lose
+            return 'lose'
+        elif opponent_hand.value > 21 or self.hand.value > opponent_hand.value: # if the dealer busts or we have a higher value, we win
+            return 'win'
+        elif self.hand.value < opponent_hand.value: # if the dealer has a higher value, we lose
+            return 'lose'
+        else:
+            return 'tie'
 
-        if self.exploration_rate > self.min_exploration_rate:
-            self.exploration_rate -= self.exploration_decay_rate
+    def _get_state(self, opponent_hand): # THIS WORKS
+        """
+        set the current state based on the game context
+        """
+        dealer_value = opponent_hand.value
+        player_value = self.hand.value
+        player_has_ace = 'A' in [card.value for card in self.hand.cards]
+        # print(len(self.hand.cards))
+        if self.deck.heat < -3:
+            deck_heat = 'cold'
+        elif self.deck.heat > 3:
+            deck_heat = 'hot'
+        else:
+            deck_heat = 'nuetral'
+        return (dealer_value, player_value, player_has_ace, deck_heat)
 
-    def policy(self, opponent_hand: Hand):
-        self.opponent_hand = opponent_hand  # Store the opponent's hand for use in get_state
-        # self.train(training_duration=5)  # Train for 10 seconds
-        state = self.get_state()
-        if state not in self.q_table:
-            self.q_table[state] = {'hit': 0, 'stand': 0}
-        return self.choose_action(state) == 'hit'
-
-    def get_state(self):
-        hand_value = self.hand.value
-        has_ace = any(card.value == 'A' for card in self.hand.cards)
-        is_hot = self.deck.heat > 0
-        dealer_value = self.opponent_hand.value if self.opponent_hand.cards else 0
-        return (hand_value, has_ace, self.deck.heat, dealer_value)
 
 
 
