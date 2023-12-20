@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # If the player stands, then their turn is over
     # The dealer then hits cards according to their pre-defined strategy
 
-    ## MCTS Agent ## By Gabriel Dos Santos
+    ## MCTS Agent ## By Gabriel Dos Santos - gnd6
 
     # First we will test the Monte Carlo agent against the dealer! One unique challenge was dealing with the fact that
     # the game of blackjack is stochastic. Originally, I tried using Chance Nodes to represent "hit" states in which a 
@@ -137,12 +137,15 @@ if __name__ == "__main__":
     # NOTE: The test script only runs 1000 iterations so there is a much higher variance. Since the difference in win rate is only about 3%,
     # there is a chance that the extra time doesn't make a difference in the test script. If you have time, try increasing the number of rounds!
 
+
+
     ## Q-Learning Agent ## By EJ Wilford - ejw58
+
     # Now we will test the Q-Learning agent against the dealer. The Q-learning agent utilizes an epsilon-greedy policy to explore the state space
     # and learn the optimal strategy. It tracks the state, action, reward, and next state for each iteration and updates the q-table accordingly.
     # The q-table is initialized with all zeros and is updated using the following formula: Q(s,a) = Q(s,a) + alpha*(reward + gamma*max(Q(s',a')) - Q(s,a))
     
-    #I ran into a few challenges with this agent. First, I had to figure out how to
+    # I ran into a few challenges with this agent. First, I had to figure out how to
     # represent the state space. I decided to use the player's hand value, the dealer's hand value, and whether or not the player has a usable ace.
     # Then after some thought, I realized it wouldn't be very hard to also include the heat of the deck, this way I could introduce pseudo-card counting
     # into the agent. I feared that this would create too large of a state space, but with relatively few training rounds, the agent was able to learn
@@ -155,8 +158,10 @@ if __name__ == "__main__":
     # prevent the agent from trying to go to that state again.
 
     ## Q-Learning Agent Results ##
+
     print("\nQ-Learning Agent vs Dealer\n", "-"*20)
     ROUNDS = 1000
+
     # With 1000 rounds to train, the agent won 37.5% of the time in my test script
     game = Game(player_agent=QLearnAgent, player_args={"training_rounds":1000}, dealer_agent=DealerAgent, rounds=ROUNDS)
     outcomes = game.start()
@@ -164,6 +169,7 @@ if __name__ == "__main__":
           f"Player wins: {round(outcomes[0]*100, 3)}%",
           f"Dealer wins: {round(outcomes[1]*100, 3)}%",
           f"Ties: {round(outcomes[2]*100, 3)}%")
+    
     # With 100,000 rounds to train, the agent won 40.7% of the time in my test script. It's interesting to note that even with a 100x increase in training rounds, 
     # the agent only improved by about 3%. Although that is to be expected since the agent is already pretty close to the agents local maximum from my testing. (also see note)
     game = Game(player_agent=QLearnAgent, player_args={"training_rounds":100000}, dealer_agent=DealerAgent, rounds=ROUNDS)
