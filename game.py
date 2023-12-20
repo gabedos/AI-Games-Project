@@ -108,11 +108,11 @@ if __name__ == "__main__":
 
     ## MCTS Agent Results ##
 
-    print("MCTS Agent vs Dealer\n", "-"*20)
+    print("MCTS Agent vs Dealer (expected: 4 min) \n", "-"*20)
     ROUNDS = 1000
 
     # Under t = 0.005 second per move (averaging 5-10 simulations), the win rate was 39.51% when having 25,000 simulations!
-    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.005}, dealer_agent=DealerAgent, rounds=ROUNDS)
+    game = Game(player_agent=MonteCarloAgent, player_args={"explore_time": 0.005}, dealer_agent=DealerAgent, rounds=ROUNDS*10)
     outcomes = game.start()
     print("(M1: t=0.005)\t",
           f"Player wins: {round(outcomes[0]*100, 3)}%",
