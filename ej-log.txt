@@ -1,0 +1,33 @@
+ESTIMATE of time to complete assignment: 16 hours
+
+      Time     Time
+Date  Started  Spent Work completed
+----  -------  ----  --------------
+12/06  10:00am  3:00  read assignment, started set up and planning, made some of the basic 
+                        boiler plate for the program and worked on the video with Gabe
+12/07   4:00pm  2:00  Continued implementing the logic for blackjack, began to scheme state space and implementing
+                        the q-learning algorithm
+12/11   2:00pm  1:00  Implemented Q-learning algorithms to update the states and created a linear approximator
+                        to estimate the value of the state but it didn't work as expected so I scrapped it
+12/15   3:15pm  4:00  Implemented Q-learning algorithms as learned in class w/o the linear approximator and 
+                        began to see some success
+12/16   7:00am  1:00  Finished the q-learning algorithm and saw that it was doing well so I worked on optimizing the
+                        parameters/making sure the logic was sound
+12/17   7:00pm  2:00  Created the tests, described the code with comments, and began to write the discussion. Found a 
+                        bug in my code that was causing it to not perform as well as it could and I fixed it
+12/20   12:00pm  0:20  Cleaned up/submitted code and created log file
+               ----
+               13:20  TOTAL time spent
+
+I discussed my solution with: Gabe Dos Santos (my partner on the project)
+
+DISCUSSION
+
+I talked about the project in the script at the base of the main file, so I won't dive too deeply into it here. 
+Generally, the project went smoothly and I think it was easier because Q-learning is a project that we just worked
+on recently so the concepts were fresh in my mind. I did have some trouble with the linear approximator and I think
+it could have potentially optimized the algorithm if I had some form of segmentation in the state space. I also
+think that my hyperparameters could have been optimized better, and this possibly could have gottem me to the 
+opitmal win percentage (43$) rather than the 40.5% that I got. Yet, overall, I am happy with the results and I
+think that my code is reasobale. When I give the program more rounds to train, it does better, so it is clear that the 
+q-learning algorithm is working. Overall, this was a great ending to what was a very fun and interesting class. 
